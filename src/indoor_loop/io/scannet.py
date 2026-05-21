@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -33,3 +34,29 @@ def collect_sequence_triplets(
         if depth_path.exists() and intrinsics_path.exists():
             triplets.append((rgb_path, depth_path, intrinsics_path))
     return triplets
+
+
+def normalize_scannet_exports(source_root: Path, output_root: Path) -> int:
+    color_src = source_root / "color"
+    depth_src = source_root / "depth"
+    intrinsic_src = source_root / "intrinsic" / "intrinsic_depth.txt"
+
+    color_out = output_root / "color"
+    depth_out = output_root / "depth"
+    intrinsics_out = output_root / "intrinsics"
+    color_out.mkdir(parents=True, exist_ok=True)
+    depth_out.mkdir(parents=True, exist_ok=True)
+    intrinsics_out.mkdir(parents=True, exist_ok=True)
+
+    count = 0
+    for color_path in sorted(color_src.glob("*.jpg")):
+        stem = color_path.stem
+        depth_path = depth_src / f"{stem}.png"
+        if not depth_path.exists():
+            continue
+        frame_name = f"frame-{int(stem):06d}"
+        shutil.copy2(color_path, color_out / f"{frame_name}.color.jpg")
+        shutil.copy2(depth_path, depth_out / f"{frame_name}.depth.png")
+        shutil.copy2(intrinsic_src, intrinsics_out / f"{frame_name}.intrinsics.txt")
+        count += 1
+    return count
