@@ -1,31 +1,41 @@
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class DataConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     rgb_path: Path
     depth_path: Path
     intrinsics_path: Path
 
 
 class OutputConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     output_dir: Path
 
 
 class ModelConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     oneformer_model_name: str
     relabel_model_name: str
 
 
 class GraphConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     near_distance_m: float
     far_distance_m: float
     max_relations_per_node: int
 
 
 class AppConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     data: DataConfig
     output: OutputConfig
     models: ModelConfig
