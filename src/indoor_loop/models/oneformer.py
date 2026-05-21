@@ -36,3 +36,19 @@ def build_segments_from_panoptic(
 class OneFormerOutput:
     panoptic_map: np.ndarray
     segments: list[SegmentRecord]
+
+
+def build_demo_oneformer_output(rgb: np.ndarray) -> OneFormerOutput:
+    height, width = rgb.shape[:2]
+    panoptic_map = np.zeros((height, width), dtype=np.int32)
+    mid_x = max(width // 2, 1)
+    panoptic_map[:, :mid_x] = 1
+    panoptic_map[:, mid_x:] = 2
+    segments = build_segments_from_panoptic(
+        panoptic_map,
+        [
+            {"id": 1, "label_name": "bed", "score": 0.9},
+            {"id": 2, "label_name": "desk", "score": 0.8},
+        ],
+    )
+    return OneFormerOutput(panoptic_map=panoptic_map, segments=segments)
