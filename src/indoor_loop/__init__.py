@@ -1,0 +1,2 @@
+"""Indoor loop closure package."""
+

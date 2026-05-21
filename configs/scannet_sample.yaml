@@ -1,0 +1,13 @@
+data:
+  rgb_path: data/sample/frame-000100.color.jpg
+  depth_path: data/sample/frame-000100.depth.png
+  intrinsics_path: data/sample/intrinsics.txt
+output:
+  output_dir: outputs/sample_frame
+models:
+  oneformer_model_name: shi-labs/oneformer_ade20k_swin_large
+  relabel_model_name: google/siglip-base-patch16-224
+graph:
+  near_distance_m: 1.5
+  far_distance_m: 3.0
+  max_relations_per_node: 4
