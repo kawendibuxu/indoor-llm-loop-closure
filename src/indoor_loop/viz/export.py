@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -11,6 +12,15 @@ def write_scene_graph_json(graph: SceneGraph, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         json.dumps(graph.model_dump(), indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
+def write_records_json(records: list[Any], output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = [record.model_dump() if hasattr(record, "model_dump") else record for record in records]
+    output_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
 
