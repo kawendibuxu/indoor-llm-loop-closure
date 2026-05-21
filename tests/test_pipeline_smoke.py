@@ -1,7 +1,7 @@
 import numpy as np
 
 from indoor_loop.graph.builder import build_object_nodes_from_segments, build_scene_graph
-from indoor_loop.models.oneformer import build_demo_oneformer_output
+from indoor_loop.models.oneformer import run_oneformer_with_fallback
 
 
 def test_pipeline_smoke_builds_non_empty_graph_from_fake_segments() -> None:
@@ -15,7 +15,11 @@ def test_pipeline_smoke_builds_non_empty_graph_from_fake_segments() -> None:
         ],
         dtype=np.float32,
     )
-    oneformer_output = build_demo_oneformer_output(rgb)
+    oneformer_output = run_oneformer_with_fallback(
+        rgb,
+        model_name="shi-labs/oneformer_ade20k_swin_large",
+        use_demo=True,
+    )
     nodes = build_object_nodes_from_segments(
         oneformer_output.panoptic_map,
         oneformer_output.segments,

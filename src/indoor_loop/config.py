@@ -23,6 +23,7 @@ class ModelConfig(BaseModel):
 
     oneformer_model_name: str
     relabel_model_name: str
+    use_demo_oneformer: bool = False
 
 
 class GraphConfig(BaseModel):

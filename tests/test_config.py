@@ -37,6 +37,7 @@ def test_load_config_reads_expected_sections(tmp_path: Path) -> None:
     assert config.data.intrinsics_path == Path("/tmp/intrinsics.txt")
     assert config.output.output_dir == Path("/tmp/out")
     assert config.models.oneformer_model_name == "shi-labs/oneformer_ade20k_swin_large"
+    assert config.models.use_demo_oneformer is False
     assert config.graph.near_distance_m == 1.5
     assert config.graph.max_relations_per_node == 4
 
@@ -49,6 +50,7 @@ def test_load_config_reads_repository_sample_config() -> None:
     assert config.data.depth_path == Path("data/sample/frame-000100.depth.png")
     assert config.data.intrinsics_path == Path("data/sample/intrinsics.txt")
     assert config.models.oneformer_model_name == "shi-labs/oneformer_ade20k_swin_large"
+    assert config.models.use_demo_oneformer is True
     assert config.graph.near_distance_m == 1.5
 
 

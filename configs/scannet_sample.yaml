@@ -7,6 +7,7 @@ output:
 models:
   oneformer_model_name: shi-labs/oneformer_ade20k_swin_large
   relabel_model_name: google/siglip-base-patch16-224
+  use_demo_oneformer: true
 graph:
   near_distance_m: 1.5
   far_distance_m: 3.0

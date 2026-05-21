@@ -10,7 +10,7 @@ if str(SRC_DIR) not in sys.path:
 from indoor_loop.config import load_config
 from indoor_loop.graph.builder import build_object_nodes_from_segments, build_scene_graph
 from indoor_loop.io.scannet import load_scannet_frame
-from indoor_loop.models.oneformer import build_demo_oneformer_output
+from indoor_loop.models.oneformer import run_oneformer_with_fallback
 from indoor_loop.viz.export import write_overlay_png, write_scene_graph_json
 
 
@@ -25,7 +25,11 @@ def main() -> None:
         config.data.depth_path,
         config.data.intrinsics_path,
     )
-    oneformer_output = build_demo_oneformer_output(frame.rgb)
+    oneformer_output = run_oneformer_with_fallback(
+        frame.rgb,
+        model_name=config.models.oneformer_model_name,
+        use_demo=config.models.use_demo_oneformer,
+    )
     nodes = build_object_nodes_from_segments(
         oneformer_output.panoptic_map,
         oneformer_output.segments,

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from indoor_loop.config import load_config
 from indoor_loop.io.scannet import load_scannet_frame
-from indoor_loop.models.oneformer import build_demo_oneformer_output
+from indoor_loop.models.oneformer import run_oneformer_with_fallback
 
 
 def test_sample_config_has_output_dir() -> None:
@@ -18,7 +18,11 @@ def test_demo_oneformer_output_matches_loaded_frame() -> None:
         config.data.intrinsics_path,
     )
 
-    output = build_demo_oneformer_output(frame.rgb)
+    output = run_oneformer_with_fallback(
+        frame.rgb,
+        model_name=config.models.oneformer_model_name,
+        use_demo=True,
+    )
 
     assert output.panoptic_map.shape == frame.depth.shape
     assert len(output.segments) == 2
