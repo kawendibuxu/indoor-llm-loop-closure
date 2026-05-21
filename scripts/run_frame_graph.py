@@ -44,7 +44,12 @@ def main() -> None:
     )
     output_path = config.output.output_dir / "scene_graph.json"
     write_scene_graph_json(graph, output_path)
-    write_overlay_png(frame.rgb, oneformer_output.segments, config.output.output_dir / "overlay.png")
+    write_overlay_png(
+        frame.rgb,
+        oneformer_output.segments,
+        config.output.output_dir / "overlay.png",
+        graph=graph,
+    )
     print(f"Wrote {output_path}")
 
 
