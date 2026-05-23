@@ -33,5 +33,14 @@ python scripts/prepare_tum_sequence.py \
 - `depth-dir`
 - `intrinsics-dir`
 
-对于 TUM，后续建议再补一个专门的 `run_tum_sequence_graph.py`，直接读取 `associate.txt`。
-当前阶段先把 TUM 适配保持在 `io` 层，不动上层场景图 pipeline。
+TUM 现在也支持单独脚本：
+
+```bash
+python scripts/run_tum_sequence_graph.py \
+  --config configs/tum_sample.yaml \
+  --associate /path/to/associate.txt \
+  --dataset-root /path/to/tum_dataset \
+  --intrinsics /path/to/tum/intrinsics.txt
+```
+
+这条路径仍然复用同一个 `process_frame_graph()`，不会影响 ScanNet 入口。
