@@ -32,6 +32,28 @@ def test_build_segments_from_panoptic_extracts_bbox_area_and_centroid() -> None:
     assert segments[1].class_name == "floor"
 
 
+def test_build_segments_from_panoptic_supports_label_lookup() -> None:
+    panoptic_map = np.array(
+        [
+            [1, 1],
+            [2, 2],
+        ],
+        dtype=np.int32,
+    )
+    segments_info = [
+        {"id": 1, "label_id": 7, "score": 0.91},
+        {"id": 2, "label_id": 12, "score": 0.99},
+    ]
+
+    segments = build_segments_from_panoptic(
+        panoptic_map,
+        segments_info,
+        label_lookup={7: "bed", 12: "floor"},
+    )
+
+    assert [segment.class_name for segment in segments] == ["bed", "floor"]
+
+
 def test_run_oneformer_with_fallback_uses_demo_runner_when_requested() -> None:
     rgb = np.zeros((4, 4, 3), dtype=np.uint8)
 

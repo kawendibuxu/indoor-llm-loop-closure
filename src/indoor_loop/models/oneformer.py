@@ -7,11 +7,19 @@ from indoor_loop.types import SegmentRecord
 
 
 def build_segments_from_panoptic(
-    panoptic_map: np.ndarray, segments_info: list[dict[str, Any]]
+    panoptic_map: np.ndarray,
+    segments_info: list[dict[str, Any]],
+    label_lookup: dict[int, str] | None = None,
 ) -> list[SegmentRecord]:
     segments: list[SegmentRecord] = []
     for info in segments_info:
         segment_id = int(info["id"])
+        label_id = int(info.get("label_id", segment_id))
+        label_name = info.get("label_name")
+        if label_name is None and label_lookup is not None:
+            label_name = label_lookup.get(label_id)
+        if label_name is None:
+            label_name = f"class_{label_id}"
         mask = panoptic_map == segment_id
         if not np.any(mask):
             continue
@@ -21,8 +29,8 @@ def build_segments_from_panoptic(
         segments.append(
             SegmentRecord(
                 segment_id=str(segment_id),
-                class_name=str(info["label_name"]),
-                is_thing=str(info["label_name"]) not in {"wall", "floor", "ceiling"},
+                class_name=str(label_name),
+                is_thing=str(label_name) not in {"wall", "floor", "ceiling"},
                 score=float(info["score"]),
                 area=int(mask.sum()),
                 bbox_xyxy=bbox,
@@ -67,6 +75,7 @@ class RealOneFormerRunner:
         self.model_name = model_name
         self._processor = None
         self._model = None
+        self._label_lookup: dict[int, str] | None = None
 
     def _ensure_loaded(self) -> None:
         if self._processor is not None and self._model is not None:
@@ -82,6 +91,10 @@ class RealOneFormerRunner:
         self._processor = OneFormerProcessor.from_pretrained(self.model_name)
         self._model = OneFormerForUniversalSegmentation.from_pretrained(self.model_name)
         self._model.eval()
+        self._label_lookup = {
+            int(label_id): str(label_name)
+            for label_id, label_name in getattr(self._model.config, "id2label", {}).items()
+        }
 
     def predict(self, rgb: np.ndarray) -> OneFormerOutput:
         from PIL import Image
@@ -97,7 +110,11 @@ class RealOneFormerRunner:
                 target_sizes=[pil_image.size[::-1]],
             )[0]
         panoptic_map = result["segmentation"].cpu().numpy().astype(np.int32)
-        segments = build_segments_from_panoptic(panoptic_map, result["segments_info"])
+        segments = build_segments_from_panoptic(
+            panoptic_map,
+            result["segments_info"],
+            label_lookup=self._label_lookup,
+        )
         return OneFormerOutput(
             panoptic_map=panoptic_map,
             segments=segments,
