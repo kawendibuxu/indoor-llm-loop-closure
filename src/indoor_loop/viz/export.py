@@ -25,6 +25,11 @@ def write_records_json(records: list[Any], output_path: Path) -> None:
     )
 
 
+def write_text_artifact(text: str, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(text, encoding="utf-8")
+
+
 def write_overlay_png(
     rgb: np.ndarray,
     segments: list[SegmentRecord],

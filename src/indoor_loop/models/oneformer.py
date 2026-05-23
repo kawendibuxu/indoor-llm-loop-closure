@@ -36,6 +36,7 @@ def build_segments_from_panoptic(
 class OneFormerOutput:
     panoptic_map: np.ndarray
     segments: list[SegmentRecord]
+    run_mode: str = "demo"
 
 
 class DemoOneFormerRunner:
@@ -52,38 +53,68 @@ class DemoOneFormerRunner:
                 {"id": 2, "label_name": "desk", "score": 0.8},
             ],
         )
-        return OneFormerOutput(panoptic_map=panoptic_map, segments=segments)
+        return OneFormerOutput(panoptic_map=panoptic_map, segments=segments, run_mode="demo")
 
 
 class RealOneFormerRunner:
     def __init__(self, model_name: str) -> None:
         self.model_name = model_name
+        self._processor = None
+        self._model = None
 
-    def predict(self, rgb: np.ndarray) -> OneFormerOutput:
+    def _ensure_loaded(self) -> None:
+        if self._processor is not None and self._model is not None:
+            return
+
         try:
-            from PIL import Image
             from transformers import OneFormerForUniversalSegmentation, OneFormerProcessor
         except ImportError as exc:
             raise RuntimeError("transformers or OneFormer dependencies are unavailable") from exc
 
-        processor = OneFormerProcessor.from_pretrained(self.model_name)
-        model = OneFormerForUniversalSegmentation.from_pretrained(self.model_name)
+        self._processor = OneFormerProcessor.from_pretrained(self.model_name)
+        self._model = OneFormerForUniversalSegmentation.from_pretrained(self.model_name)
+        self._model.eval()
+
+    def predict(self, rgb: np.ndarray) -> OneFormerOutput:
+        from PIL import Image
+        import torch
+
+        self._ensure_loaded()
         pil_image = Image.fromarray(rgb)
-        inputs = processor(images=pil_image, task_inputs=["panoptic"], return_tensors="pt")
-        outputs = model(**inputs)
-        result = processor.post_process_panoptic_segmentation(
-            outputs,
-            target_sizes=[pil_image.size[::-1]],
-        )[0]
+        inputs = self._processor(images=pil_image, task_inputs=["panoptic"], return_tensors="pt")
+        with torch.no_grad():
+            outputs = self._model(**inputs)
+            result = self._processor.post_process_panoptic_segmentation(
+                outputs,
+                target_sizes=[pil_image.size[::-1]],
+            )[0]
         panoptic_map = result["segmentation"].cpu().numpy().astype(np.int32)
         segments = build_segments_from_panoptic(panoptic_map, result["segments_info"])
-        return OneFormerOutput(panoptic_map=panoptic_map, segments=segments)
+        return OneFormerOutput(panoptic_map=panoptic_map, segments=segments, run_mode="real")
+
+
+_REAL_RUNNER_CACHE: dict[str, RealOneFormerRunner] = {}
+
+
+def get_oneformer_runner(model_name: str, use_demo: bool = False) -> DemoOneFormerRunner | RealOneFormerRunner:
+    if use_demo:
+        return DemoOneFormerRunner()
+    runner = _REAL_RUNNER_CACHE.get(model_name)
+    if runner is None:
+        runner = RealOneFormerRunner(model_name)
+        _REAL_RUNNER_CACHE[model_name] = runner
+    return runner
 
 
 def run_oneformer_with_fallback(rgb: np.ndarray, model_name: str, use_demo: bool = False) -> OneFormerOutput:
     if use_demo:
         return DemoOneFormerRunner().predict(rgb)
     try:
-        return RealOneFormerRunner(model_name).predict(rgb)
+        return get_oneformer_runner(model_name).predict(rgb)
     except Exception:
-        return DemoOneFormerRunner().predict(rgb)
+        output = DemoOneFormerRunner().predict(rgb)
+        return OneFormerOutput(
+            panoptic_map=output.panoptic_map,
+            segments=output.segments,
+            run_mode="demo_fallback",
+        )

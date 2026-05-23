@@ -4,7 +4,12 @@ from indoor_loop.config import AppConfig
 from indoor_loop.graph.builder import build_object_nodes_from_segments, build_scene_graph
 from indoor_loop.io.scannet import load_scannet_frame
 from indoor_loop.models.oneformer import run_oneformer_with_fallback
-from indoor_loop.viz.export import write_overlay_png, write_records_json, write_scene_graph_json
+from indoor_loop.viz.export import (
+    write_overlay_png,
+    write_records_json,
+    write_scene_graph_json,
+    write_text_artifact,
+)
 
 
 def process_frame_graph(
@@ -38,3 +43,4 @@ def process_frame_graph(
     write_records_json(graph.relations, output_dir / "relations.json")
     write_scene_graph_json(graph, output_dir / "scene_graph.json")
     write_overlay_png(frame.rgb, oneformer_output.segments, output_dir / "overlay.png", graph=graph)
+    write_text_artifact(f"{oneformer_output.run_mode}\n", output_dir / "oneformer_mode.txt")

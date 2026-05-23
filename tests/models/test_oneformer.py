@@ -1,8 +1,11 @@
 import numpy as np
+import pytest
 
 from indoor_loop.models.oneformer import (
     DemoOneFormerRunner,
+    RealOneFormerRunner,
     build_segments_from_panoptic,
+    get_oneformer_runner,
     run_oneformer_with_fallback,
 )
 
@@ -48,3 +51,26 @@ def test_demo_runner_is_available_without_model_weights() -> None:
 
     assert output.panoptic_map.shape == (6, 8)
     assert len(output.segments) == 2
+
+
+def test_get_oneformer_runner_reuses_cached_real_runner() -> None:
+    runner1 = get_oneformer_runner("demo-model")
+    runner2 = get_oneformer_runner("demo-model")
+
+    assert runner1 is runner2
+
+
+def test_run_oneformer_with_fallback_marks_demo_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    rgb = np.zeros((4, 4, 3), dtype=np.uint8)
+
+    def _raise(_: RealOneFormerRunner, __: np.ndarray) -> None:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(RealOneFormerRunner, "predict", _raise)
+    output = run_oneformer_with_fallback(
+        rgb,
+        model_name="shi-labs/oneformer_ade20k_swin_large",
+        use_demo=False,
+    )
+
+    assert output.run_mode == "demo_fallback"

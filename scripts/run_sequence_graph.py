@@ -20,7 +20,6 @@ def main() -> None:
     parser.add_argument("--intrinsics-dir", type=Path, required=True)
     args = parser.parse_args()
 
-    load_config(args.config)
     config = load_config(args.config)
     triplets = collect_sequence_triplets(args.color_dir, args.depth_dir, args.intrinsics_dir)
     for rgb_path, depth_path, intrinsics_path in triplets:

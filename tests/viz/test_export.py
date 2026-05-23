@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 
 from indoor_loop.types import ObjectNode, ObjectRelation, SceneGraph, SegmentRecord
-from indoor_loop.viz.export import write_overlay_png, write_scene_graph_json
+from indoor_loop.viz.export import write_overlay_png, write_scene_graph_json, write_text_artifact
 
 
 def test_write_scene_graph_json_creates_file(tmp_path: Path) -> None:
@@ -94,3 +94,12 @@ def test_write_overlay_png_draws_annotations() -> None:
 
     image = np.asarray(Image.open(output_path))
     assert image.sum() > 0
+
+
+def test_write_text_artifact_creates_file(tmp_path: Path) -> None:
+    output_path = tmp_path / "oneformer_mode.txt"
+
+    write_text_artifact("real\n", output_path)
+
+    assert output_path.exists()
+    assert output_path.read_text(encoding="utf-8") == "real\n"
