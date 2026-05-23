@@ -74,3 +74,4 @@ def test_run_oneformer_with_fallback_marks_demo_fallback(monkeypatch: pytest.Mon
     )
 
     assert output.run_mode == "demo_fallback"
+    assert output.error_message == "RuntimeError: boom"

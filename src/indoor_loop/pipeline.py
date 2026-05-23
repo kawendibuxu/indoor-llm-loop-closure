@@ -18,7 +18,7 @@ def process_frame_graph(
     intrinsics_path: Path,
     output_dir: Path,
     config: AppConfig,
-) -> None:
+) -> str:
     frame = load_scannet_frame(rgb_path, depth_path, intrinsics_path)
     oneformer_output = run_oneformer_with_fallback(
         frame.rgb,
@@ -44,3 +44,6 @@ def process_frame_graph(
     write_scene_graph_json(graph, output_dir / "scene_graph.json")
     write_overlay_png(frame.rgb, oneformer_output.segments, output_dir / "overlay.png", graph=graph)
     write_text_artifact(f"{oneformer_output.run_mode}\n", output_dir / "oneformer_mode.txt")
+    if oneformer_output.error_message is not None:
+        write_text_artifact(f"{oneformer_output.error_message}\n", output_dir / "oneformer_error.txt")
+    return oneformer_output.run_mode

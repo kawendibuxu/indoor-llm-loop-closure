@@ -37,6 +37,7 @@ class OneFormerOutput:
     panoptic_map: np.ndarray
     segments: list[SegmentRecord]
     run_mode: str = "demo"
+    error_message: str | None = None
 
 
 class DemoOneFormerRunner:
@@ -53,7 +54,12 @@ class DemoOneFormerRunner:
                 {"id": 2, "label_name": "desk", "score": 0.8},
             ],
         )
-        return OneFormerOutput(panoptic_map=panoptic_map, segments=segments, run_mode="demo")
+        return OneFormerOutput(
+            panoptic_map=panoptic_map,
+            segments=segments,
+            run_mode="demo",
+            error_message=None,
+        )
 
 
 class RealOneFormerRunner:
@@ -68,9 +74,11 @@ class RealOneFormerRunner:
 
         try:
             from transformers import OneFormerForUniversalSegmentation, OneFormerProcessor
+            from transformers.utils import logging as transformers_logging
         except ImportError as exc:
             raise RuntimeError("transformers or OneFormer dependencies are unavailable") from exc
 
+        transformers_logging.set_verbosity_error()
         self._processor = OneFormerProcessor.from_pretrained(self.model_name)
         self._model = OneFormerForUniversalSegmentation.from_pretrained(self.model_name)
         self._model.eval()
@@ -90,7 +98,12 @@ class RealOneFormerRunner:
             )[0]
         panoptic_map = result["segmentation"].cpu().numpy().astype(np.int32)
         segments = build_segments_from_panoptic(panoptic_map, result["segments_info"])
-        return OneFormerOutput(panoptic_map=panoptic_map, segments=segments, run_mode="real")
+        return OneFormerOutput(
+            panoptic_map=panoptic_map,
+            segments=segments,
+            run_mode="real",
+            error_message=None,
+        )
 
 
 _REAL_RUNNER_CACHE: dict[str, RealOneFormerRunner] = {}
@@ -111,10 +124,11 @@ def run_oneformer_with_fallback(rgb: np.ndarray, model_name: str, use_demo: bool
         return DemoOneFormerRunner().predict(rgb)
     try:
         return get_oneformer_runner(model_name).predict(rgb)
-    except Exception:
+    except Exception as exc:
         output = DemoOneFormerRunner().predict(rgb)
         return OneFormerOutput(
             panoptic_map=output.panoptic_map,
             segments=output.segments,
             run_mode="demo_fallback",
+            error_message=f"{type(exc).__name__}: {exc}",
         )
