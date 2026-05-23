@@ -8,7 +8,8 @@ TUM 通常提供：
 
 - `rgb/`
 - `depth/`
-- `associate.txt`
+- `rgb.txt`
+- `depth.txt`
 
 我们需要额外准备一个内参文件，例如：
 
@@ -38,7 +39,8 @@ TUM 现在也支持单独脚本：
 ```bash
 python scripts/run_tum_sequence_graph.py \
   --config configs/tum_sample.yaml \
-  --associate /path/to/associate.txt \
+  --rgb-txt /path/to/tum/rgb.txt \
+  --depth-txt /path/to/tum/depth.txt \
   --dataset-root /path/to/tum_dataset \
   --intrinsics /path/to/tum/intrinsics.txt
 ```
