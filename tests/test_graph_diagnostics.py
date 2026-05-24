@@ -48,3 +48,37 @@ def test_summarize_graph_outputs_tracks_modes_and_errors(tmp_path: Path) -> None
     assert summary["demo_fallback_count"] == 1
     assert summary["error_counts"]["RuntimeError: boom"] == 1
     assert summary["top_classes"][0][0] == "bed"
+
+
+def test_summarize_graph_outputs_detects_relation_inconsistency(tmp_path: Path) -> None:
+    frame_dir = tmp_path / "frame-000001"
+    frame_dir.mkdir()
+    (frame_dir / "scene_graph.json").write_text(
+        json.dumps(
+            {
+                "nodes": [
+                    {
+                        "object_id": "a",
+                        "coarse_anchor_class": "bed",
+                        "center_3d": [0.0, 0.0, 0.0],
+                    },
+                    {
+                        "object_id": "b",
+                        "coarse_anchor_class": "desk",
+                        "center_3d": [1.0, 0.0, 0.0],
+                    },
+                ],
+                "relations": [
+                    {"subject_id": "a", "predicate": "left_of", "object_id": "b", "confidence": 0.8},
+                    {"subject_id": "a", "predicate": "right_of", "object_id": "b", "confidence": 0.8},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (frame_dir / "oneformer_mode.txt").write_text("real\n", encoding="utf-8")
+
+    summary = summarize_graph_outputs(tmp_path, sample_count=5)
+
+    assert summary["relation_issue_counts"]["pairwise_left_right_conflict"] == 1
+    assert summary["sample_unstable_frames"] == []
