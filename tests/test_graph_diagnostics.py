@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from indoor_loop.diagnostics import summarize_graph_outputs
 from indoor_loop.types import SceneGraph
 
 
@@ -20,3 +21,30 @@ def test_scene_graph_json_has_nodes_and_relations_lists(tmp_path: Path) -> None:
 
     assert "nodes" in payload
     assert "relations" in payload
+
+
+def test_summarize_graph_outputs_tracks_modes_and_errors(tmp_path: Path) -> None:
+    real_frame = tmp_path / "frame-000001"
+    real_frame.mkdir()
+    (real_frame / "scene_graph.json").write_text(
+        json.dumps({"nodes": [{"coarse_anchor_class": "bed"}], "relations": []}),
+        encoding="utf-8",
+    )
+    (real_frame / "oneformer_mode.txt").write_text("real\n", encoding="utf-8")
+
+    fallback_frame = tmp_path / "frame-000002"
+    fallback_frame.mkdir()
+    (fallback_frame / "scene_graph.json").write_text(
+        json.dumps({"nodes": [{"coarse_anchor_class": "desk"}, {"coarse_anchor_class": "wall"}], "relations": []}),
+        encoding="utf-8",
+    )
+    (fallback_frame / "oneformer_mode.txt").write_text("demo_fallback\n", encoding="utf-8")
+    (fallback_frame / "oneformer_error.txt").write_text("RuntimeError: boom\n", encoding="utf-8")
+
+    summary = summarize_graph_outputs(tmp_path, sample_count=5)
+
+    assert summary["total_frames"] == 2
+    assert summary["real_frame_count"] == 1
+    assert summary["demo_fallback_count"] == 1
+    assert summary["error_counts"]["RuntimeError: boom"] == 1
+    assert summary["top_classes"][0][0] == "bed"
